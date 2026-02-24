@@ -66,6 +66,91 @@ export default function ReportsPage() {
     }
   }
   
+  const handleExportToExcel = () => {
+    if (sales.length === 0) {
+      toast.error('No hay datos para exportar')
+      return
+    }
+    
+    try {
+      // Prepare data for Excel
+      const excelData = []
+      
+      sales.forEach((sale) => {
+        const saleDate = new Date(sale.date).toLocaleString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+        
+        const itemsList = sale.items.map(item => 
+          `${item.quantity}x ${item.product_name} (${currency}${item.price_at_sale.toFixed(2)})`
+        ).join(', ')
+        
+        excelData.push({
+          'Fecha': saleDate,
+          'Items Vendidos': itemsList,
+          'Cantidad de Items': sale.items.reduce((sum, item) => sum + item.quantity, 0),
+          'Método de Pago': sale.payment_method === 'cash' ? 'Efectivo' : 'Tarjeta',
+          'Total Venta': `${currency}${sale.total_amount.toFixed(2)}`,
+          'Ganancia': `${currency}${sale.profit.toFixed(2)}`,
+          'Monto Recibido': `${currency}${(sale.amount_received || sale.total_amount).toFixed(2)}`,
+          'Cambio': `${currency}${(sale.change_given || 0).toFixed(2)}`
+        })
+      })
+      
+      // Add summary row
+      excelData.push({
+        'Fecha': '',
+        'Items Vendidos': '',
+        'Cantidad de Items': '',
+        'Método de Pago': 'TOTAL',
+        'Total Venta': `${currency}${totalRevenue.toFixed(2)}`,
+        'Ganancia': `${currency}${totalProfit.toFixed(2)}`,
+        'Monto Recibido': '',
+        'Cambio': ''
+      })
+      
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData)
+      
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 20 }, // Fecha
+        { wch: 50 }, // Items
+        { wch: 15 }, // Cantidad
+        { wch: 15 }, // Método
+        { wch: 15 }, // Total
+        { wch: 15 }, // Ganancia
+        { wch: 15 }, // Recibido
+        { wch: 15 }  // Cambio
+      ]
+      
+      // Create workbook
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Ventas')
+      
+      // Generate filename with date range or current date
+      let filename = 'Reporte_Ventas'
+      if (startDate || endDate) {
+        filename += `_${startDate || 'inicio'}_${endDate || 'fin'}`
+      } else {
+        filename += `_${new Date().toISOString().split('T')[0]}`
+      }
+      filename += '.xlsx'
+      
+      // Download file
+      XLSX.writeFile(wb, filename)
+      
+      toast.success(`Archivo ${filename} descargado exitosamente`)
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      toast.error('Error al exportar a Excel')
+    }
+  }
+  
   useEffect(() => {
     if (user) {
       fetchSales()
