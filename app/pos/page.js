@@ -435,6 +435,35 @@ export default function POSPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
+        {/* Print Ticket Dialog */}
+        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Venta Completada</DialogTitle>
+              <DialogDescription>
+                ¿Deseas imprimir el ticket de venta?
+              </DialogDescription>
+            </DialogHeader>
+            {lastSale && (
+              <TicketReceipt 
+                sale={lastSale} 
+                storeName={user?.store_name || 'Mi Tienda'} 
+                currency={currency}
+                onPrint={() => setIsPrintDialogOpen(false)}
+              />
+            )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPrintDialogOpen(false)}
+              >
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )
