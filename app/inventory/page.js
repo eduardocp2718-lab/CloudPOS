@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Search, AlertCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, AlertCircle, Package } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 export default function InventoryPage() {
