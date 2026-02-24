@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import useCartStore from '@/lib/store'
+import TicketReceipt from '@/components/TicketReceipt'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,8 +36,10 @@ export default function POSPage() {
   const [user, setUser] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [amountReceived, setAmountReceived] = useState('')
+  const [lastSale, setLastSale] = useState(null)
   
   const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getItemCount } = useCartStore()
   
