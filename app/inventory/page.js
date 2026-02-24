@@ -170,6 +170,8 @@ export default function InventoryPage() {
     )
   }
   
+  const currency = user?.currency_symbol || '$'
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
