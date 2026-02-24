@@ -161,6 +161,9 @@ export default function DashboardPage() {
               <Link href="/inventory" className="block">
                 <Button variant="outline" className="w-full">Gestionar Inventario</Button>
               </Link>
+              <Link href="/reports" className="block">
+                <Button variant="outline" className="w-full">Ver Reportes</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
