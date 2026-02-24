@@ -155,8 +155,12 @@ export default function POSPage() {
           toast.success('¡Venta completada exitosamente!')
         }
         
+        // Store sale for printing
+        setLastSale(data)
+        
         clearCart()
         setIsPaymentDialogOpen(false)
+        setIsPrintDialogOpen(true)
         fetchProducts() // Refresh to update stock
       } else {
         const data = await response.json()
