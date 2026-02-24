@@ -195,10 +195,19 @@ export default function ReportsPage() {
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end gap-2">
                 <Button onClick={fetchSales} className="gap-2">
                   <Calendar className="h-4 w-4" />
                   Filtrar
+                </Button>
+                <Button 
+                  onClick={handleExportToExcel} 
+                  variant="outline" 
+                  className="gap-2"
+                  disabled={sales.length === 0}
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Exportar a Excel
                 </Button>
               </div>
             </div>
