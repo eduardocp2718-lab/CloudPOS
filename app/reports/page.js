@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { FileText, Calendar, FileSpreadsheet } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function ReportsPage() {
   const router = useRouter()
@@ -27,6 +28,7 @@ export default function ReportsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [chartData, setChartData] = useState([])
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -58,6 +60,18 @@ export default function ReportsPage() {
       if (response.ok) {
         const data = await response.json()
         setSales(data)
+        
+        // Process data for chart
+        const dateMap = {}
+        data.forEach(sale => {
+          const date = new Date(sale.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })
+          if (!dateMap[date]) {
+            dateMap[date] = { date, ventas: 0, ganancia: 0 }
+          }
+          dateMap[date].ventas += sale.total_amount
+          dateMap[date].ganancia += sale.profit
+        })
+        setChartData(Object.values(dateMap))
       }
     } catch (error) {
       console.error('Error fetching sales:', error)
@@ -213,6 +227,31 @@ export default function ReportsPage() {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Charts Section */}
+        {sales.length > 0 && chartData.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Tendencia de Ventas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="date" stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
+                    labelStyle={{ color: '#fff' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="ventas" fill="#10b981" name="Ventas" />
+                  <Bar dataKey="ganancia" fill="#3b82f6" name="Ganancia" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Summary */}
         <div className="grid gap-6 md:grid-cols-3 mb-6">

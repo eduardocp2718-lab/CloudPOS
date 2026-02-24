@@ -7,12 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DollarSign, TrendingUp, Package, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function DashboardPage() {
   const router = useRouter()
   const [stats, setStats] = useState(null)
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [salesData, setSalesData] = useState([])
+  const [categoryData, setCategoryData] = useState([])
   
   useEffect(() => {
     const fetchData = async () => {
@@ -31,6 +34,54 @@ export default function DashboardPage() {
         if (statsResponse.ok) {
           const statsData = await statsResponse.json()
           setStats(statsData)
+        }
+        
+        // Fetch sales for charts
+        const salesResponse = await fetch('/api/sales')
+        if (salesResponse.ok) {
+          const sales = await salesResponse.json()
+          
+          // Process sales by day for last 7 days
+          const last7Days = []
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date()
+            date.setDate(date.getDate() - i)
+            date.setHours(0, 0, 0, 0)
+            const nextDay = new Date(date)
+            nextDay.setDate(nextDay.getDate() + 1)
+            
+            const daySales = sales.filter(sale => {
+              const saleDate = new Date(sale.date)
+              return saleDate >= date && saleDate < nextDay
+            })
+            
+            const dayTotal = daySales.reduce((sum, sale) => sum + sale.total_amount, 0)
+            
+            last7Days.push({
+              date: date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+              ventas: dayTotal
+            })
+          }
+          setSalesData(last7Days)
+          
+          // Process sales by category
+          const categoryMap = {}
+          sales.forEach(sale => {
+            sale.items.forEach(item => {
+              // We don't have category in sale items, so we'll group by payment method instead
+              const method = sale.payment_method === 'cash' ? 'Efectivo' : 'Tarjeta'
+              if (!categoryMap[method]) {
+                categoryMap[method] = 0
+              }
+              categoryMap[method] += item.quantity * item.price_at_sale
+            })
+          })
+          
+          const categoryArray = Object.keys(categoryMap).map(key => ({
+            name: key,
+            value: categoryMap[key]
+          }))
+          setCategoryData(categoryArray)
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -51,6 +102,7 @@ export default function DashboardPage() {
   }
   
   const currency = user?.currency_symbol || '$'
+  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
   
   return (
     <div className="min-h-screen bg-background">
@@ -130,6 +182,59 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground">
                 Productos con poco stock
               </p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Charts Section */}
+        <div className="grid gap-6 lg:grid-cols-2 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ventas Últimos 7 Días</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={salesData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="date" stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
+                    labelStyle={{ color: '#fff' }}
+                  />
+                  <Line type="monotone" dataKey="ventas" stroke="#10b981" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Ventas por Método de Pago</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
+                    formatter={(value) => `${currency}${value.toFixed(2)}`}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
