@@ -81,13 +81,12 @@ async function handleRoute(request, { params }) {
         ))
       }
       
-      // Hash password
-      const password_hash = await bcrypt.hash(password, 10)
-      
+      // NOTA: Guardando contraseña en texto plano para desarrollo/MVP
+      // TODO: Implementar sistema de reset password y volver a encriptar
       const user = {
         id: uuidv4(),
         email,
-        password_hash,
+        password: password, // Guardando sin encriptar para poder recuperarla
         store_name,
         currency_symbol: currency_symbol || '$',
         created_at: new Date()
