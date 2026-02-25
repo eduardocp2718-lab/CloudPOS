@@ -136,7 +136,9 @@ async function handleRoute(request, { params }) {
         ))
       }
       
-      const isValidPassword = await bcrypt.compare(password, user.password_hash)
+      // Comparación directa de contraseña (sin encriptación)
+      // NOTA: Para desarrollo/MVP. Implementar reset password y encriptación en producción
+      const isValidPassword = user.password === password
       if (!isValidPassword) {
         return handleCORS(NextResponse.json(
           { error: 'Credenciales inválidas' },
