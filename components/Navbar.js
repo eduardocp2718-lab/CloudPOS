@@ -26,6 +26,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/inventory', label: 'Inventario', icon: Package },
     { href: '/pos', label: 'Terminal POS', icon: ShoppingCart },
+    { href: '/cash-register', label: 'Control de Caja', icon: Wallet },
     { href: '/reports', label: 'Reportes', icon: FileText },
   ]
   
