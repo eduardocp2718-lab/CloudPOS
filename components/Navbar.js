@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, FileText, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, FileText, LogOut, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
