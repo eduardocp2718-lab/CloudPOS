@@ -427,6 +427,246 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(cleanedSales))
     }
     
+    // ==================== CASH REGISTER ROUTES ====================
+    
+    // Open cash register - POST /api/cash-register/open
+    if (route === '/cash-register/open' && method === 'POST') {
+      const body = await request.json()
+      const { initial_cash } = body
+      
+      if (initial_cash === undefined || initial_cash < 0) {
+        return handleCORS(NextResponse.json(
+          { error: 'El fondo inicial es requerido y debe ser mayor o igual a 0' },
+          { status: 400 }
+        ))
+      }
+      
+      // Get user info
+      const user = await db.collection('users').findOne({ id: userId })
+      
+      // Check if there's already an open cash register
+      const existingOpen = await db.collection('cash_registers').findOne({
+        user_id: userId,
+        status: 'open'
+      })
+      
+      if (existingOpen) {
+        return handleCORS(NextResponse.json(
+          { error: 'Ya existe una caja abierta. Ciérrala antes de abrir una nueva.' },
+          { status: 400 }
+        ))
+      }
+      
+      const cashRegister = {
+        id: uuidv4(),
+        user_id: userId,
+        opened_by: user.email,
+        opened_at: new Date(),
+        closed_at: null,
+        initial_cash: parseFloat(initial_cash),
+        cash_sales: 0,
+        card_sales: 0,
+        expenses: [],
+        withdrawals: [],
+        expected_cash: parseFloat(initial_cash),
+        actual_cash: null,
+        difference: null,
+        difference_percentage: null,
+        closing_notes: null,
+        closing_photo_url: null,
+        status: 'open'
+      }
+      
+      await db.collection('cash_registers').insertOne(cashRegister)
+      const { _id, ...cleanCashRegister } = cashRegister
+      
+      return handleCORS(NextResponse.json(cleanCashRegister))
+    }
+    
+    // Get current open cash register - GET /api/cash-register/current
+    if (route === '/cash-register/current' && method === 'GET') {
+      const cashRegister = await db.collection('cash_registers').findOne({
+        user_id: userId,
+        status: 'open'
+      })
+      
+      if (!cashRegister) {
+        return handleCORS(NextResponse.json({ cashRegister: null }))
+      }
+      
+      const { _id, ...cleanCashRegister } = cashRegister
+      return handleCORS(NextResponse.json(cleanCashRegister))
+    }
+    
+    // Register expense - POST /api/cash-register/expense
+    if (route === '/cash-register/expense' && method === 'POST') {
+      const body = await request.json()
+      const { amount, description } = body
+      
+      if (!amount || amount <= 0 || !description) {
+        return handleCORS(NextResponse.json(
+          { error: 'Monto y descripción son requeridos' },
+          { status: 400 }
+        ))
+      }
+      
+      const cashRegister = await db.collection('cash_registers').findOne({
+        user_id: userId,
+        status: 'open'
+      })
+      
+      if (!cashRegister) {
+        return handleCORS(NextResponse.json(
+          { error: 'No hay caja abierta' },
+          { status: 400 }
+        ))
+      }
+      
+      const expense = {
+        id: uuidv4(),
+        amount: parseFloat(amount),
+        description,
+        date: new Date()
+      }
+      
+      const newExpenses = [...cashRegister.expenses, expense]
+      const totalExpenses = newExpenses.reduce((sum, e) => sum + e.amount, 0)
+      const totalWithdrawals = cashRegister.withdrawals.reduce((sum, w) => sum + w.amount, 0)
+      const expected_cash = cashRegister.initial_cash + cashRegister.cash_sales - totalExpenses - totalWithdrawals
+      
+      await db.collection('cash_registers').updateOne(
+        { id: cashRegister.id },
+        { 
+          $set: { 
+            expenses: newExpenses,
+            expected_cash
+          } 
+        }
+      )
+      
+      return handleCORS(NextResponse.json({ expense, expected_cash }))
+    }
+    
+    // Register withdrawal - POST /api/cash-register/withdrawal
+    if (route === '/cash-register/withdrawal' && method === 'POST') {
+      const body = await request.json()
+      const { amount, description } = body
+      
+      if (!amount || amount <= 0 || !description) {
+        return handleCORS(NextResponse.json(
+          { error: 'Monto y descripción son requeridos' },
+          { status: 400 }
+        ))
+      }
+      
+      const cashRegister = await db.collection('cash_registers').findOne({
+        user_id: userId,
+        status: 'open'
+      })
+      
+      if (!cashRegister) {
+        return handleCORS(NextResponse.json(
+          { error: 'No hay caja abierta' },
+          { status: 400 }
+        ))
+      }
+      
+      const withdrawal = {
+        id: uuidv4(),
+        amount: parseFloat(amount),
+        description,
+        date: new Date()
+      }
+      
+      const newWithdrawals = [...cashRegister.withdrawals, withdrawal]
+      const totalExpenses = cashRegister.expenses.reduce((sum, e) => sum + e.amount, 0)
+      const totalWithdrawals = newWithdrawals.reduce((sum, w) => sum + w.amount, 0)
+      const expected_cash = cashRegister.initial_cash + cashRegister.cash_sales - totalExpenses - totalWithdrawals
+      
+      await db.collection('cash_registers').updateOne(
+        { id: cashRegister.id },
+        { 
+          $set: { 
+            withdrawals: newWithdrawals,
+            expected_cash
+          } 
+        }
+      )
+      
+      return handleCORS(NextResponse.json({ withdrawal, expected_cash }))
+    }
+    
+    // Close cash register - POST /api/cash-register/close
+    if (route === '/cash-register/close' && method === 'POST') {
+      const body = await request.json()
+      const { actual_cash, closing_notes, closing_photo_url } = body
+      
+      if (actual_cash === undefined || actual_cash < 0) {
+        return handleCORS(NextResponse.json(
+          { error: 'El conteo real es requerido' },
+          { status: 400 }
+        ))
+      }
+      
+      const cashRegister = await db.collection('cash_registers').findOne({
+        user_id: userId,
+        status: 'open'
+      })
+      
+      if (!cashRegister) {
+        return handleCORS(NextResponse.json(
+          { error: 'No hay caja abierta' },
+          { status: 400 }
+        ))
+      }
+      
+      const actualCash = parseFloat(actual_cash)
+      const difference = actualCash - cashRegister.expected_cash
+      const difference_percentage = cashRegister.expected_cash > 0 
+        ? (difference / cashRegister.expected_cash) * 100 
+        : 0
+      
+      await db.collection('cash_registers').updateOne(
+        { id: cashRegister.id },
+        { 
+          $set: { 
+            actual_cash: actualCash,
+            difference,
+            difference_percentage,
+            closing_notes: closing_notes || null,
+            closing_photo_url: closing_photo_url || null,
+            closed_at: new Date(),
+            status: 'closed'
+          } 
+        }
+      )
+      
+      const updatedCashRegister = await db.collection('cash_registers').findOne({
+        id: cashRegister.id
+      })
+      
+      const { _id, ...cleanCashRegister } = updatedCashRegister
+      return handleCORS(NextResponse.json(cleanCashRegister))
+    }
+    
+    // Get cash register history - GET /api/cash-register/history
+    if (route === '/cash-register/history' && method === 'GET') {
+      const url = new URL(request.url)
+      const limit = parseInt(url.searchParams.get('limit')) || 30
+      
+      const cashRegisters = await db.collection('cash_registers')
+        .find({ 
+          user_id: userId,
+          status: 'closed'
+        })
+        .sort({ closed_at: -1 })
+        .limit(limit)
+        .toArray()
+      
+      const cleanedCashRegisters = cashRegisters.map(({ _id, ...rest }) => rest)
+      return handleCORS(NextResponse.json(cleanedCashRegisters))
+    }
+    
     // ==================== DASHBOARD ROUTES ====================
     
     // Get dashboard stats - GET /api/dashboard/stats
