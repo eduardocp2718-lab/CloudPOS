@@ -89,10 +89,16 @@ export default function CashRegisterPage() {
       const response = await fetch('/api/cash-register/current')
       if (response.ok) {
         const data = await response.json()
-        setCashRegister(data.cashRegister || data)
+        // Ensure we only set a valid cash register or null
+        if (data && (data.cashRegister || data.id)) {
+          setCashRegister(data.cashRegister || data)
+        } else {
+          setCashRegister(null)
+        }
       }
     } catch (error) {
       console.error('Error fetching cash register:', error)
+      setCashRegister(null)
     }
   }
   
