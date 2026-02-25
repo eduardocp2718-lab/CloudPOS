@@ -10,18 +10,21 @@ Sistema completo de Punto de Venta (POS) tipo SaaS Multi-Tenant construido con N
    - Registro de nuevos dueños de tienda
    - Login con JWT en cookies httpOnly
    - Sistema Multi-Tenant (cada usuario solo ve sus datos)
+   - ⚠️ **NOTA:** Contraseñas en texto plano (ver PASSWORDS.md para recuperación)
 
 2. **Dashboard Inteligente**
    - Ventas del día en tiempo real
    - Ganancia calculada automáticamente
    - Alertas de productos con bajo stock
    - Métricas del mes
+   - Gráficas de tendencias (últimos 7 días)
 
 3. **Gestión de Inventario**
    - CRUD completo de productos
    - Búsqueda por nombre, código de barras o categoría
    - Alertas automáticas de bajo stock (< 10 unidades)
    - Categorización de productos
+   - Exportación a Excel
 
 4. **Terminal de Venta (POS) - FUNCIONALIDAD CORE**
    - Búsqueda en tiempo real de productos
@@ -32,12 +35,28 @@ Sistema completo de Punto de Venta (POS) tipo SaaS Multi-Tenant construido con N
    - Múltiples métodos de pago (Efectivo/Tarjeta)
    - Actualización automática de inventario al vender
    - Validación de stock disponible
+   - Impresión de tickets
 
-5. **Reportes de Ventas**
+5. **Control de Caja** 🆕
+   - Apertura de caja con fondo inicial
+   - Registro automático de ventas (efectivo/tarjeta)
+   - Registro manual de gastos del negocio
+   - Registro de retiros (depósitos a banco)
+   - Cierre de caja con conteo real
+   - Detección automática de diferencias (sobrantes/faltantes)
+   - Alertas si diferencia > 2%
+   - Notas explicativas obligatorias
+   - Upload de foto del conteo (evidencia)
+   - Historial completo de cierres
+   - Reporte de corte imprimible
+
+6. **Reportes de Ventas**
    - Historial completo de ventas
    - Filtros por rango de fechas
    - Resumen de ingresos y ganancias
    - Detalle de productos vendidos por transacción
+   - Gráficas de tendencias y análisis
+   - Exportación a Excel
 
 ## 🏗️ Arquitectura
 
