@@ -398,6 +398,35 @@ async function handleRoute(request, { params }) {
       }
       
       await db.collection('sales').insertOne(sale)
+      
+      // Update cash register if open
+      const openCashRegister = await db.collection('cash_registers').findOne({
+        user_id: userId,
+        status: 'open'
+      })
+      
+      if (openCashRegister) {
+        const updateFields = {}
+        if (payment_method === 'cash') {
+          updateFields.cash_sales = openCashRegister.cash_sales + total_amount
+        } else {
+          updateFields.card_sales = openCashRegister.card_sales + total_amount
+        }
+        
+        // Recalculate expected cash
+        const newCashSales = payment_method === 'cash' 
+          ? openCashRegister.cash_sales + total_amount 
+          : openCashRegister.cash_sales
+        const totalExpenses = openCashRegister.expenses.reduce((sum, e) => sum + e.amount, 0)
+        const totalWithdrawals = openCashRegister.withdrawals.reduce((sum, w) => sum + w.amount, 0)
+        updateFields.expected_cash = openCashRegister.initial_cash + newCashSales - totalExpenses - totalWithdrawals
+        
+        await db.collection('cash_registers').updateOne(
+          { id: openCashRegister.id },
+          { $set: updateFields }
+        )
+      }
+      
       const { _id, ...cleanSale } = sale
       
       return handleCORS(NextResponse.json(cleanSale))
